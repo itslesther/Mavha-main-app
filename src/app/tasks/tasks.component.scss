@@ -1,0 +1,4 @@
+.radio-purple [type="radio"]:checked+label:after {
+  border-color: purple;
+  background-color: purple;
+}

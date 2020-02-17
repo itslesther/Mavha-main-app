@@ -1,0 +1,66 @@
+<mdb-navbar SideClass="navbar fixed-top navbar-expand-lg navbar-dark purple darken-4" [containerInside]="false">
+
+  <mdb-navbar-brand>
+    <a class="navbar-brand" [routerLink]="userInfo? ['/tasks'] : ['/account/login']">MAvha</a>
+  </mdb-navbar-brand>
+
+  <links>
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <ng-container *ngIf="!userInfo">
+        <li class="nav-item" routerLinkActive="active">
+          <a class="nav-link waves-light" [routerLink]="['/account/create']" mdbWavesEffect>
+            <mdb-icon fas icon="plus-square"></mdb-icon>Create Account
+          </a>
+        </li>
+        <li class="nav-item" routerLinkActive="active">
+          <a class="nav-link waves-light" [routerLink]="['/account/login']" mdbWavesEffect>
+            <mdb-icon fas icon="sign-in-alt"></mdb-icon>Login
+          </a>
+        </li>
+      </ng-container>
+
+      <ng-container *ngIf="userInfo">
+        <li class="nav-item">
+          <a class="nav-link">
+            <div class="btn-group" mdbDropdown>
+              <a mdbDropdownToggle>
+                <mdb-icon fas icon="user"></mdb-icon>{{userInfo.firstName}}
+              </a>
+              <div class="dropdown-menu dropdown-menu-right dropdown-primary">
+                <!-- <a class="dropdown-item">
+                  <mdb-icon fas icon="cog"></mdb-icon>Settings
+                </a> -->
+                <!-- <div class="divider dropdown-divider"></div> -->
+                <a class="dropdown-item" (click)="logout()">
+                  <mdb-icon fas icon="sign-out-alt"></mdb-icon>Logout
+                </a>
+              </div>
+            </div>
+          </a>
+        </li>
+      </ng-container>
+    </ul>
+  </links>
+
+  <!-- <links [hidden]="!userInfo">
+    <ul class="navbar-nav ml-auto nav-flex-icons">
+      <li class="nav-item">
+        <a class="nav-link">
+          <div class="btn-group" mdbDropdown>
+            <a *ngIf="selectedWallet$ | async as selectedWallet" mdbDropdownToggle>
+              <mdb-icon fas icon="user"></mdb-icon>Lesther Caballero
+            </a>
+            <div class="dropdown-menu dropdown-menu-right dropdown-primary">
+
+              <div class="divider dropdown-divider"></div>
+              <a class="dropdown-item" (click)="logout()">
+                <mdb-icon fas icon="sign-out-alt"></mdb-icon>Logout
+              </a>
+            </div>
+          </div>
+        </a>
+      </li>
+    </ul>
+  </links> -->
+
+</mdb-navbar>

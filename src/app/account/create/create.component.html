@@ -1,0 +1,64 @@
+<div class="pt-5 mt-5">
+
+  <div class="row no-gutters justify-content-center">
+    <div class="col-md-8">
+
+      <form [formGroup]="accountForm" (ngSubmit)="createAccount()" class="text-center border border-light p-5">
+        <p class="h4 mb-4">Signup</p>
+
+        <div class="form-row mb-4">
+          <div class="col mb-4">
+            <input type="text" id="defaultRegisterFormFirstName" formControlName="firstName" class="form-control" [placeholder]="'First name'">
+            <mdb-error *ngIf="invalidField(accountForm.get('firstName'))">
+              This Field is required
+            </mdb-error>
+          </div>
+
+          <div class="col mb-4">
+            <input type="text" id="defaultRegisterFormLastName" formControlName="lastName" class="form-control"
+            [placeholder]="'Last name'">
+            <mdb-error *ngIf="invalidField(accountForm.get('lastName'))">
+              This Field is required
+            </mdb-error>
+          </div>
+
+          <div class="col-12">
+            <input type="email" id="defaultRegisterFormEmail" formControlName="email" class="form-control mb-4"
+              [placeholder]="'Email'">
+            <mdb-error *ngIf="invalidField(accountForm.get('email'))">{{emailErrorMessage}}</mdb-error>
+          </div>
+
+          <div class="col-12">
+            <input type="password" id="defaultRegisterFormPassword" formControlName="password" class="form-control mb-4"
+              [placeholder]="'Password'"
+              aria-describedby="defaultRegisterFormPasswordHelpBlock">
+            <mdb-error *ngIf="invalidField(accountForm.get('password'))">{{passwordErrorMessage}}</mdb-error>
+          </div>
+
+          <div class="col-12">
+            <input type="password" id="defaultRegisterFormPassword2" formControlName="repeatPassword" class="form-control"
+              [placeholder]="'Repeat Password'"
+              aria-describedby="defaultRegisterFormPassword2HelpBlock">
+            <mdb-error *ngIf="invalidField(accountForm.get('repeatPassword'))">{{repeatPasswordErrorMessage}}</mdb-error>
+          </div>
+
+        </div>
+
+        <div class="pt-4">
+          <button mdbBtn color="secondary" [disabled]="submitting" block="true" type="submit">
+            <span *ngIf="!submitting">Signup</span>
+            <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <hr>
+
+        <p>By clicking
+          <em>Signup</em> You agree to our 
+          <a href="javascript:void(0)">terms of service</a>
+        </p>
+      </form>
+
+    </div>
+  </div>
+</div>

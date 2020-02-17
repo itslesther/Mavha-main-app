@@ -1,0 +1,33 @@
+<div class="pt-5 mt-5">
+
+  <div class="row no-gutters justify-content-center">
+    <div class="col-md-8">
+
+      <form [formGroup]="accountForm" (ngSubmit)="login()" class="text-center border border-light p-5">
+        <p class="h4 mb-4">Login</p>
+        
+        <div class="row no-gutters">
+          <div class="col-12">
+            <input type="email" id="defaultRegisterFormEmail" formControlName="email" class="form-control mb-4" [placeholder]="'Email'">
+            <mdb-error *ngIf="invalidField(accountForm.get('email'))">{{emailErrorMessage}}</mdb-error>
+          </div>
+          
+          <div class="col-12">
+            <input type="password" id="defaultRegisterFormPassword" formControlName="password" class="form-control" [placeholder]="'Password'" 
+              aria-describedby="defaultRegisterFormPasswordHelpBlock">
+            <mdb-error *ngIf="invalidField(accountForm.get('password'))">This field is required</mdb-error>
+          </div>
+        </div>
+  
+        <button mdbBtn color="secondary" [disabled]="submitting" block="true" class="my-4" type="submit">
+          <span *ngIf="!submitting">Login</span>
+          <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        </button>
+
+      </form>
+
+    </div>
+  </div>
+
+</div>
+  
