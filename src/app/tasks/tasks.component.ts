@@ -95,6 +95,7 @@ export class TasksComponent implements OnInit, OnDestroy {
   addNewFile() {
     this.files.push(this.fb.group({
       name: ['', [Validators.required]],
+      path: ['', [Validators.required]],
       url: ['', [Validators.required]]
     }));
   }
@@ -128,7 +129,8 @@ export class TasksComponent implements OnInit, OnDestroy {
 
           this.files.controls[index].setValue({
             name: file.name,
-            url: response.data.url
+            url: response.data.url,
+            path: response.data.path
           })
           
         } else {
@@ -136,7 +138,7 @@ export class TasksComponent implements OnInit, OnDestroy {
         }
 
       },
-      
+
       () => {
 
       });
