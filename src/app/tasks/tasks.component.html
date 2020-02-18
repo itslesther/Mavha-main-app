@@ -36,14 +36,35 @@
               No Tasks found
             </h1>
           </ng-container>
-
+          <div class="row pb-4">
+            <div class="col-1">
+              
+            </div>
+            <div class="col-7">
+              <span class="font-weight-bold">Title</span>
+            </div>
+            <div class="col-2 text-center">
+              <span class="font-weight-bold">Priority</span>
+            </div>
+            <div class="col-2">
+              <span class="font-weight-bold">Due Date</span>
+            </div>
+          </div>
           <ng-container *ngFor="let task of tasks">
             <div class="row">
               <div class="col-1">
                 <mdb-checkbox [checked]="task.completed"></mdb-checkbox>
               </div>
-              <div class="col-11 is-clickable" (click)="openViewTaskModal(task.id)">
+              <div class="col-7 is-clickable text-truncate" (click)="openViewTaskModal(task.id)">
                 {{task.title}}
+              </div>
+              <div class="col-2 text-center">
+                <mdb-badge *ngIf="task.priority === 'low'" pill="true" default="true">Low</mdb-badge>
+                <mdb-badge *ngIf="task.priority === 'medium'" pill="true" warning="true">Medium</mdb-badge>
+                <mdb-badge *ngIf="task.priority === 'high'" pill="true" danger="true">High</mdb-badge>
+              </div>
+              <div class="col-2">
+                <small>{{formatDate(task.dueDate)}}</small>
               </div>
             </div>
             <hr>
@@ -81,13 +102,13 @@
               <button *ngIf="taskAction === 'view'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect>
                 <mdb-icon fas icon="check"></mdb-icon> Mark Complete
               </button>
-              <button *ngIf="taskAction === 'view'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect>
+              <button *ngIf="taskAction === 'view'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect (click)="editTaskModal()">
                 <mdb-icon far icon="edit"></mdb-icon> Edit Task
               </button>
-              <button *ngIf="taskAction === 'edit'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect>
+              <button *ngIf="taskAction === 'edit'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect (click)="openViewTaskModal(selectedTask.id)">
                 <mdb-icon far icon="edit"></mdb-icon> Undo Edition
               </button>
-              <button class="list-group-item list-group-item-action waves-light px-0 red-text" mdbWavesEffect>
+              <button class="list-group-item list-group-item-action waves-light px-0 red-text" mdbWavesEffect (click)="deleteTask()">
                 <mdb-icon far icon="trash-alt"></mdb-icon> Delete Task
               </button>
             </div>
@@ -96,7 +117,12 @@
 
 
       <div class="modal-body">
-        <form *ngIf="taskAction !== 'view'" [formGroup]="taskForm" class="row justify-content-center">
+
+        <div *ngIf="deleting" class="col-12 text-center pt-5">
+          <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
+        </div>
+
+        <form *ngIf="taskAction !== 'view' && !deleting" [formGroup]="taskForm" class="row justify-content-center">
 
           <div class="col-12 text-center">
             <h4 class="font-weight-bold">Title</h4>
@@ -125,7 +151,7 @@
                value="low"
                formControlName="priority">
               <label class="form-check-label" for="materialInline1">
-                <mdb-badge pill="true" default="true">Low Priority</mdb-badge>
+                <mdb-badge pill="true" default="true">Low</mdb-badge>
               </label>
             </div>
   
@@ -135,7 +161,7 @@
               value="medium"
               formControlName="priority">
               <label class="form-check-label" for="materialInline2">
-                <mdb-badge pill="true" warning="true">Medium Priority</mdb-badge>
+                <mdb-badge pill="true" warning="true">Medium</mdb-badge>
               </label>
             </div>
   
@@ -145,7 +171,7 @@
               value="high"
               formControlName="priority">
               <label class="form-check-label" for="materialInline3">
-                <mdb-badge pill="true" danger="true">High Priority</mdb-badge>
+                <mdb-badge pill="true" danger="true">High</mdb-badge>
               </label>
             </div>
           </div>
@@ -165,15 +191,19 @@
           <div class="col-10 mt-0" formArrayName="files">
             <ng-container *ngFor="let file of files.controls; let i=index">
               <div class="file-field md-form my-0">
-                <button type="button" [disabled]="false" mdbBtn color="primary" size="sm" class="waves-light" mdbWavesEffect>
+                <button type="button" [disabled]="taskForm.disabled || file.value.uploading" mdbBtn color="primary" size="sm" class="waves-light" mdbWavesEffect>
                   <i class="mr-1 fa fa-plus white-text" aria-hidden="true"></i>Choose File
-                  <input type="file" [disabled]="false" mdbFileSelect (change)="uploadFile($event, i)">
+                  <input type="file" [disabled]="taskForm.disabled || file.value.uploading" mdbFileSelect (change)="uploadFile($event, i)">
                 </button>
                 <div class="file-path-wrapper">
-                  <input type="file" [disabled]="false" (change)="uploadFile($event, i)">
-                  <input disabled class="file-path" type="text" placeholder="Drag and Drop your file here" [value]="null">
+                  <input type="file" [disabled]="taskForm.disabled || file.value.uploading" (change)="uploadFile($event, i)">
+                  <input class="file-path"
+                    disabled  
+                    type="text" 
+                    placeholder="Drag and Drop your file here" 
+                    [value]="file.value.uploading? ('Progress: ' + file.value.uploadPercent  + '%') : file.value.name">
                 </div>
-                <button mdbBtn color="danger" size="sm" (click)="removeFile(i)">
+                <button mdbBtn [disabled]="taskForm.disabled || file.value.uploading" color="danger" size="sm" (click)="removeFile(i)">
                   <mdb-icon far icon="trash-alt mr-1"></mdb-icon>Delete
                 </button>
               </div>
@@ -189,53 +219,65 @@
         </form>
 
         <div *ngIf="taskAction === 'view'" class="row justify-content-center">
-          <div class="col-12">
-            <h1 class="font-weight-bold">This is the title</h1>
+          <div *ngIf="!selectedTask" class="col-12 text-center pt-5">
+            <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
           </div>
 
-          <div class="col-2">
-            <p class="grey-text font-weight-bold">Due Date:</p>
-          </div>
-          <div class="col-10">
-            <p class="font-weight-bold">August 16th 2020</p>
-          </div>
-
-          <div class="col-2">
-            <p class="grey-text font-weight-bold">Priority:</p>
-          </div>
-          <div class="col-10">
-            <mdb-badge pill="true" warning="true">Medium Priority</mdb-badge>
-          </div>
-
-          <div class="col-12"><hr></div>
-
-          <div class="col-12">
-            <div>
-              <p class="">Here we go with the description</p>
-              <ul>
-                <li>WWfd</li>
-                <li>sdsdsd</li>
-              </ul>
+          <ng-container *ngIf="selectedTask && !deleting">
+            <div class="col-12">
+              <h1 class="font-weight-bold">{{selectedTask.title}}</h1>
             </div>
-          </div>
+  
+            <div class="col-2">
+              <p class="grey-text font-weight-bold">Due Date:</p>
+            </div>
+            <div class="col-10">
+              <p class="font-weight-bold">{{formatDate(selectedTask.dueDate)}}</p>
+            </div>
+  
+            <div class="col-2">
+              <p class="grey-text font-weight-bold">Priority:</p>
+            </div>
+            <div class="col-10">
+              <mdb-badge *ngIf="selectedTask.priority === 'low'" pill="true" default="true">Low</mdb-badge>
+              <mdb-badge *ngIf="selectedTask.priority === 'medium'" pill="true" warning="true">Medium</mdb-badge>
+              <mdb-badge *ngIf="selectedTask.priority === 'high'" pill="true" danger="true">High</mdb-badge>
+            </div>
+  
+            <div class="col-12"><hr></div>
+  
+            <div class="col-12">
+              <div [innerHTML]="selectedTask.description | safeHtml">
+              </div>
+            </div>
+  
+            <div class="col-12"><hr></div>
+  
+            <div class="col-2">
+              <p class="grey-text font-weight-bold">Attachments:</p>
+            </div>
+            <div class="col-10">
+              
+              <a *ngFor="let file of selectedTask.files" [href]="file.url" class="mr-3" target="_blank">{{file.name}}</a>
+            </div>
+          </ng-container>
 
-          <div class="col-12"><hr></div>
-
-          <div class="col-2">
-            <p class="grey-text font-weight-bold">Attachments:</p>
-          </div>
-          <div class="col-10">
-            <a *ngFor="let item of [1,1,1]" href="ddd" class="mr-3">hola.png</a>
-          </div>
         </div>
+
       </div>
 
 
       
-      <div class="modal-footer justify-content-center">
-        <button type="button" mdbBtn color="secondary" outline="true" mdbWavesEffect (click)="closeTaskModal()">Close</button>
-        <button type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="newTask()" [disabled]="submitting" >
+      <div *ngIf="!deleting" class="modal-footer justify-content-center">
+        <button *ngIf="taskAction !== 'view'" type="button" mdbBtn color="secondary" outline="true" mdbWavesEffect (click)="closeTaskModal()">Close</button>
+
+        <button *ngIf="taskAction === 'new'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="newTask()" [disabled]="submitting" >
           <span *ngIf="!submitting">Submit</span>
+          <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        </button>
+
+        <button *ngIf="taskAction === 'edit'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="updateTask()" [disabled]="submitting" >
+          <span *ngIf="!submitting">Update</span>
           <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         </button>
       </div>

@@ -21,9 +21,12 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   public userInfo: User;
   private userSub: Subscription;
+  
   public tasks: Task[];
+  public selectedTask: Task;
 
   public submitting: boolean;
+  public deleting: boolean;
 
   private toastOptions = this.sharedService.toastOptions;
 
@@ -33,16 +36,15 @@ export class TasksComponent implements OnInit, OnDestroy {
     // minYear: new Date().getFullYear() - 100,
     closeAfterSelect: true,
     useDateObject: true,
-    showTodayBtn: false,
     dateFormat: 'mmmm dd, yyyy'
   };
 
   public taskForm = this.fb.group({
-    creator: ['', [Validators.required]],
-    title: ['', [Validators.required]],
-    dueDate: ['', [Validators.required]],
-    priority: ['', [Validators.required]],
-    description: ['', [Validators.required]],
+    creator: [null],
+    title: [null, [Validators.required]],
+    dueDate: [null, [Validators.required]],
+    priority: [null, [Validators.required]],
+    description: [null, [Validators.required]],
     files: this.fb.array([])
   });
 
@@ -94,14 +96,27 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   addNewFile() {
     this.files.push(this.fb.group({
-      name: ['', [Validators.required]],
-      path: ['', [Validators.required]],
-      url: ['', [Validators.required]]
+      name: [null, [Validators.required]],
+      path: [null, [Validators.required]],
+      url: [null, [Validators.required]],
+      uploading: [null],
+      uploadPercent: [null]
     }));
   }
 
   removeFile(index: number) {
+    // if(this.files.controls[index].value.path &&
+    //   (this.taskAction === 'new' || (this.taskAction === 'edit' && index > this.selectedTask.files.length - 1))
+    // ){ 
+    //   this.tasksService.deleteDocument({path: this.files.controls[index].value.path});
+    // }
+
     this.files.removeAt(index);
+  }
+
+
+  public get uploadingFiles() {
+    return !!(<any[]>this.files.value).find(file => file.uploading);
   }
 
   async uploadFile(e: any, index: number) {
@@ -118,65 +133,53 @@ export class TasksComponent implements OnInit, OnDestroy {
     const req = new FormData();
     req.append('doc', file);
 
-    await this.tasksService.uploadDocument(req, 
-      (uploadPercent) => {
+    // if(this.files.controls[index].value.path &&
+    //   (this.taskAction === 'new' || (this.taskAction === 'edit' && index > this.selectedTask.files.length - 1))
+    // ){
+    //   this.tasksService.deleteDocument({path: this.files.controls[index].value.path});
+    // }
+    
+    this.files.controls[index].setValue({
+      name: null,
+      url: null,
+      path: null,
+      uploading: null,
+      uploadPercent: null
+    });
+
+    this.tasksService.uploadDocument(req, 
+      (uploadPercent: number) => {
         console.log(uploadPercent);
+        this.files.controls[index].patchValue({
+          uploadPercent,
+          uploading: true
+        });
       },
 
       (response: APIResponse) => {
         console.log(response);
         if (response.success) {
 
-          this.files.controls[index].setValue({
+          this.files.controls[index].patchValue({
             name: file.name,
             url: response.data.url,
-            path: response.data.path
-          })
+            path: response.data.path,
+            uploading: false,
+          });
           
         } else {
-          
+          this.files.controls[index].patchValue({
+            uploading: false,
+          });
         }
 
       },
 
       () => {
-
+        this.files.controls[index].patchValue({
+          uploading: false,
+        });
       });
-
-  	// if (!file.type.match(/image-*/)) return this.toast.error('','Invalid format',this.toastOptions);
-      
-    // const fileName = this.sharedService.newFileName(file.type); 
-
-
-    //   this.files.ID = { file, name: fileName, tempName: file.name };
-    //   this.files.ID.uploaded = false;
-    //   this.files.ID.errorUploading = false;
-
-    //   this.verificationsService.uploadPhoto(this.userInfo.id, this.files.ID.file, this.files.ID.name).subscribe(uploadIDFilePercent => {
-    //     this.files.ID.uploading = true;
-    //     this.files.ID.uploadIDFilePercent = uploadIDFilePercent;
-
-    //   }, (err)=>{
-    //     this.files.ID.uploading = false;
-    //     this.files.ID.errorUploading = true;
-    //     console.error(err.message);
-    //     this.toast.error('','Error uploading file. Try again later', this.toastOptions);
-
-    //   }, async ()=>{
-    //     try{
-    //       let getImageURL = await this.verificationsService.getImageURL(this.userInfo.id, this.files.ID.name);
-    //       this.newVerificationForm.get('govIssuedId.idFile').setValue(getImageURL);
-    //       this.files.ID.uploading = false;
-    //       this.files.ID.uploaded = true;
-
-    //     }catch(err){
-    //       this.files.ID.uploading = false;
-    //       this.files.ID.errorUploading = true;
-    //       console.error(err.message || err);
-    //       this.toast.error('','Error uploading file. Try again later', this.toastOptions);
-    //     }
-    //   });
-
 
 
   }
@@ -188,14 +191,50 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   openNewTaskModal() {
+    this.taskForm.reset();
+    // this.taskForm.get('dueDate').setValue(null); //VARIABLE NOT BEING RESET
     this.taskModal.show();
     this.taskAction = 'new';
+    this.taskForm.removeControl('files');
+    this.taskForm.addControl('files', this.fb.array([]));
   }
+
+  async openViewTaskModal(taskId: string) {
+    if(!this.taskModal.isShown) this.taskModal.show();
+    this.taskAction = 'view';
+    this.selectedTask = null;
+
+    const response = await this.tasksService.getTask(taskId);
+
+    if (response.success) {
+      this.selectedTask = response.data;
+      
+    } else {
+      
+    }
+  }
+
+  editTaskModal() {
+    this.taskForm.reset();
+    this.taskAction = 'edit';
+    this.taskForm.removeControl('files');
+    this.taskForm.addControl('files', this.fb.array([]));
+    this.selectedTask.files.forEach(file => this.addNewFile());
+    this.taskForm.patchValue(this.selectedTask);
+    this.taskForm.get('dueDate').setValue(new Date(this.selectedTask.dueDate));
+  }
+
+  formatDate(unFormatedDate: number) {
+    const formatedDate = this.sharedService.formatDate(unFormatedDate);
+    return `${formatedDate.month} ${formatedDate.dayOfMonth}, ${formatedDate.year}`;
+  }
+
 
   async newTask() {
     if(!this.taskForm.valid) return this.taskForm.markAllAsTouched();
 
-    const req = {...this.taskForm.value};
+    const req = {...this.taskForm.value}; //CLONE
+    req.files = (<any[]>JSON.parse(JSON.stringify(req.files))).filter(file => file.name).map(file => ({name: file.name, url: file.url, path: file.path})); //DEEP CLONE
     req.dueDate = (<Date>req.dueDate).getTime();
 
     this.taskForm.disable();
@@ -208,11 +247,11 @@ export class TasksComponent implements OnInit, OnDestroy {
       if (response.success) {
 
         this.toast.success('Task Created','', this.toastOptions);
-        this.taskModal.hide();
+        // this.taskModal.hide();
 
         const task: Task = {
           id: response.data,
-          creator: this.userInfo.id,
+          creator: this.userInfo? this.userInfo.id : null,
           title: req.title,
           dueDate: req.dueDate,
           priority: req.priority,
@@ -222,6 +261,9 @@ export class TasksComponent implements OnInit, OnDestroy {
           files: req.files
         };
         this.tasks.unshift(task);
+
+        this.taskAction = 'view';
+        this.selectedTask = task;
         
       } else {
         console.error(response.error.code); 
@@ -237,9 +279,88 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.submitting = false;
   }
 
-  openViewTaskModal(taskId: string) {
-    this.taskModal.show();
-    this.taskAction = 'new';
+
+  async updateTask() {
+    if(!this.taskForm.valid) return this.taskForm.markAllAsTouched();
+
+    const req = {...this.taskForm.value}; //CLONE
+    req.files = (<any[]>JSON.parse(JSON.stringify(req.files))).filter(file => file.name).map(file => ({name: file.name, url: file.url, path: file.path})); //DEEP CLONE
+    req.dueDate = (<Date>req.dueDate).getTime();
+
+    this.taskForm.disable();
+    this.submitting = true;
+
+    try {
+
+      const task: Task = {
+        id: this.selectedTask.id,
+        creator: this.selectedTask.creator,
+        title: req.title,
+        dueDate: req.dueDate,
+        priority: req.priority,
+        description: req.description,
+        completed: this.selectedTask.completed,
+        creationTS: this.selectedTask.creationTS,
+        files: req.files
+      };
+
+      const response = await this.tasksService.updateTask(task);
+
+      if (response.success) {
+
+        this.toast.success('Task Updated','', this.toastOptions);
+        // this.taskModal.hide();
+        this.taskAction = 'view';
+        this.selectedTask = task;
+
+        
+        const taskIndex = this.tasks.findIndex(_task => _task.id = task.id);
+        this.tasks[taskIndex] = task;
+        
+      } else {
+        console.error(response.error.code); 
+        this.toast.error(errorCodes[response.error.code], '', this.toastOptions);
+      }
+      
+    } catch (err) {
+      console.error(err.message || err);
+      this.toast.error(errorCodes['anErrorHasOccured'], '', this.toastOptions);
+    }
+
+    this.taskForm.enable();
+    this.submitting = false;
   }
+
+
+  async deleteTask() {
+
+    this.deleting = true;
+
+    try {
+      const response = await this.tasksService.deleteTask(this.selectedTask.id);
+
+      if(response.success) {
+
+        this.tasks.splice(this.tasks.findIndex(_task => _task.id === this.selectedTask.id), 1);
+        this.toast.success('Task Deleted','', this.toastOptions);
+        this.taskModal.hide();
+
+      } else {
+        console.error(response.error.code); 
+        this.toast.error(errorCodes[response.error.code], '', this.toastOptions);
+      }
+      
+    } catch (err) {
+      console.error(err.message || err);
+      this.toast.error(errorCodes['anErrorHasOccured'], '', this.toastOptions);
+    }
+
+    this.deleting = false;
+
+    
+
+  }
+
+  
 
 }

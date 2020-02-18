@@ -41,7 +41,7 @@ export class TasksService {
     return this.http.delete<APIResponse>(`${this.APIURL}/tasks/${taskId}`, this.httpOptions).toPromise();
   }
 
-  public async uploadDocument(req: FormData, progressCb, completeCb, errorCb){
+  public uploadDocument(req: FormData, progressCb, completeCb, errorCb){
     // const token = await this.sharedService.getToken();
     const xhr = new XMLHttpRequest();
 
@@ -52,6 +52,10 @@ export class TasksService {
     xhr.open('POST', `${this.APIURL}/tasks/uploadDocument`);
     // xhr.setRequestHeader('Authorization', token);
     xhr.send(req);
+  }
+
+  deleteDocument(req: {path: string}) {
+    return this.http.post<APIResponse>(`${this.APIURL}/tasks/deleteDocument`, req, this.httpOptions).toPromise();
   }
 
 
