@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  APIURL: 'https://mavha-main-api.herokuapp.com/',
+  APIURL: 'https://mavha-main-api.herokuapp.com',
   firebase: {
     apiKey: "AIzaSyCCYXtKw-yqqoo0KTGIrOv42pA1PDqueEM",
     authDomain: "mavha-test.firebaseapp.com",

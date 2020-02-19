@@ -14,7 +14,7 @@ export interface Task {
   creator: string;
   title: string;
   dueDate: number;
-  priority: 'low' | 'medium' | 'high';
+  priority: 1 | 2 | 3; //'low' | 'medium' | 'high';
   description: string;
   // status: 'incomplete' | 'completed';
   completed: boolean;

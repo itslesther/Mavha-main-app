@@ -11,63 +11,99 @@
     <div *ngIf="tasks" class="col-8 pt-3">
       <div class="row pb-4">
         <div class="col-auto mr-auto">
-          <button mdbBtn color="secondary" rounded="true" (click)="openNewTaskModal()">
+          <button mdbBtn color="secondary" rounded="true" mdbWavesEffect (click)="openNewTaskModal()">
             <mdb-icon fas icon="plus-circle mr-1"></mdb-icon>Add Task
           </button>
         </div>
-        <div class="col-2 ml-auto">
-          <mdb-select [options]="groupOptionsSelect" [multiple]="true" [highlightFirst]="false" placeholder="Choose your option"></mdb-select>
-          <label>All Tasks</label>
+
+        <div class="col-auto ml-auto">
+          <button mdbBtn color="secondary" size="sm" outline="true" rounded="true" mdbWavesEffect (click)="filterCollapse.toggle()">
+            <mdb-icon fas icon="filter"></mdb-icon> Filters
+          </button>
+          <button 
+            mdbBtn 
+            color="secondary" 
+            size="sm" 
+            rounded="true" 
+            #sortByPopover="bs-mdbPopover" 
+            placement="bottom" 
+            [mdbPopover]="sortByPopTemplate" 
+            mdbWavesEffect>
+            <mdb-icon fas icon="sort"></mdb-icon> Sort by
+          </button>
+
+          <ng-template #sortByPopTemplate>
+            <div class="list-group list-group-flush">
+              <button *ngFor="let item of sortListItems" 
+                class="list-group-item list-group-item-action waves-light px-0" 
+                mdbWavesEffect 
+                (click)="selectSortItem(item)">
+                <mdb-icon *ngIf="item.selected" fas icon="check"></mdb-icon> {{item.name}}
+              </button>
+            </div>
+          </ng-template>
         </div>
-        <div class="col-2">
-          <mdb-select [options]="groupOptionsSelect" [multiple]="true" [highlightFirst]="false" placeholder="Choose your option"></mdb-select>
-          <label>All Priorities</label>
-        </div>
-        <div class="col-2">
-          <mdb-select [options]="groupOptionsSelect" [multiple]="true" [highlightFirst]="false" placeholder="Choose your option"></mdb-select>
-          <label>Sort by Due Date</label>
+
+      </div>
+
+      <div mdbCollapse #filterCollapse="bs-collapse">
+        <div *ngFor="let filter of filtersListItems" class="row">
+          <div class="col-12">
+            <span class="font-weight-bold">{{filter.name}}</span>
+            <button *ngFor="let item of filter.items"
+              mdbBtn
+              mdbWavesEffect
+              size="sm"
+              rounded="true"
+              class="btn-{{item.selected? '' : 'outline-'}}secondary"
+              (click)="selectFilterItem(filter.value, item)">
+              {{item.name}}
+            </button>
+          </div>
         </div>
       </div>
 
-      <mdb-card>
+
+      <mdb-card class="mt-4">
         <mdb-card-body>
-          <ng-container *ngIf="!tasks.length">
-            <h1 class="text-center">
-              No Tasks found
-            </h1>
-          </ng-container>
-          <div class="row pb-4">
+          <div class="row pb-1">
             <div class="col-1">
-              
             </div>
             <div class="col-7">
               <span class="font-weight-bold">Title</span>
             </div>
             <div class="col-2 text-center">
-              <span class="font-weight-bold">Priority</span>
+              <span class="font-weight-bold">Priority<mdb-icon fas icon="arrow-down ml-1"></mdb-icon></span>
             </div>
             <div class="col-2">
-              <span class="font-weight-bold">Due Date</span>
+              <span class="font-weight-bold">Due Date<mdb-icon fas icon="arrow-down ml-1"></mdb-icon></span>
             </div>
           </div>
+
+          <ng-container *ngIf="!tasks.length">
+            <h1 class="text-center pt-5">
+              No Tasks found
+            </h1>
+          </ng-container>
+          
           <ng-container *ngFor="let task of tasks">
-            <div class="row">
+            <div class="row is-clickable py-3 taskHovered" (click)="openViewTaskModal(task.id)">
               <div class="col-1">
-                <mdb-checkbox [checked]="task.completed"></mdb-checkbox>
+                <mdb-checkbox [rounded]="true" [checked]="task.completed" (click)="$event.stopPropagation()"></mdb-checkbox>
               </div>
-              <div class="col-7 is-clickable text-truncate" (click)="openViewTaskModal(task.id)">
+              <div class="col-7 text-truncate">
                 {{task.title}}
               </div>
               <div class="col-2 text-center">
-                <mdb-badge *ngIf="task.priority === 'low'" pill="true" default="true">Low</mdb-badge>
-                <mdb-badge *ngIf="task.priority === 'medium'" pill="true" warning="true">Medium</mdb-badge>
-                <mdb-badge *ngIf="task.priority === 'high'" pill="true" danger="true">High</mdb-badge>
+                <mdb-badge *ngIf="task.priority === 1" pill="true" default="true">Low</mdb-badge>
+                <mdb-badge *ngIf="task.priority === 2" pill="true" warning="true">Medium</mdb-badge>
+                <mdb-badge *ngIf="task.priority === 3" pill="true" danger="true">High</mdb-badge>
               </div>
               <div class="col-2">
                 <small>{{formatDate(task.dueDate)}}</small>
               </div>
             </div>
-            <hr>
+            <hr class="my-0">
           </ng-container>
         </mdb-card-body>
       </mdb-card>
@@ -75,7 +111,7 @@
   </div>
 </div>
 
-    
+<div class="py-5"></div>
 
 <div mdbModal #taskModal="mdbModal" class="modal fade top" id="frameModalTop" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
   aria-hidden="true">
@@ -148,7 +184,7 @@
             <div class="form-check form-check-inline">
               <input type="radio" class="form-check-input" id="materialInline1" name="inlineMaterialRadiosExample" mdbInput
                name="priority"
-               value="low"
+               value="1"
                formControlName="priority">
               <label class="form-check-label" for="materialInline1">
                 <mdb-badge pill="true" default="true">Low</mdb-badge>
@@ -158,7 +194,7 @@
             <div class="form-check form-check-inline">
               <input type="radio" class="form-check-input" id="materialInline2" name="inlineMaterialRadiosExample" mdbInput 
               name="priority"
-              value="medium"
+              value="2"
               formControlName="priority">
               <label class="form-check-label" for="materialInline2">
                 <mdb-badge pill="true" warning="true">Medium</mdb-badge>
@@ -168,7 +204,7 @@
             <div class="form-check form-check-inline">
               <input type="radio" class="form-check-input" id="materialInline3" name="inlineMaterialRadiosExample" mdbInput 
               name="priority"
-              value="high"
+              [value]="3"
               formControlName="priority">
               <label class="form-check-label" for="materialInline3">
                 <mdb-badge pill="true" danger="true">High</mdb-badge>
@@ -239,9 +275,9 @@
               <p class="grey-text font-weight-bold">Priority:</p>
             </div>
             <div class="col-10">
-              <mdb-badge *ngIf="selectedTask.priority === 'low'" pill="true" default="true">Low</mdb-badge>
-              <mdb-badge *ngIf="selectedTask.priority === 'medium'" pill="true" warning="true">Medium</mdb-badge>
-              <mdb-badge *ngIf="selectedTask.priority === 'high'" pill="true" danger="true">High</mdb-badge>
+              <mdb-badge *ngIf="selectedTask.priority === 1" pill="true" default="true">Low</mdb-badge>
+              <mdb-badge *ngIf="selectedTask.priority === 2" pill="true" warning="true">Medium</mdb-badge>
+              <mdb-badge *ngIf="selectedTask.priority === 3" pill="true" danger="true">High</mdb-badge>
             </div>
   
             <div class="col-12"><hr></div>

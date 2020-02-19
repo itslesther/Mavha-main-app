@@ -17,8 +17,8 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   @ViewChild('taskModal', {static: false}) public taskModal: ModalDirective;
   @ViewChild('taskMenuPopover', {static: false}) public taskMenuPopover: PopoverDirective;
-  groupOptionsSelect: Array<any>;
-
+  @ViewChild('sortByPopover', {static: false}) public sortByPopover: PopoverDirective;
+  
   public userInfo: User;
   private userSub: Subscription;
   
@@ -39,6 +39,22 @@ export class TasksComponent implements OnInit, OnDestroy {
     dateFormat: 'mmmm dd, yyyy'
   };
 
+  public filtersListItems: {
+    name: string;
+    value: string;
+    items: {
+        name: string;
+        value: any;
+        selected?: boolean;
+    }[];
+  }[];
+
+  public sortListItems: {
+    name: string;
+    value: string;
+    selected?: boolean;
+  }[];
+
   public taskForm = this.fb.group({
     creator: [null],
     title: [null, [Validators.required]],
@@ -57,11 +73,89 @@ export class TasksComponent implements OnInit, OnDestroy {
     private toast: ToastService,
   ) { }
 
+
+
   async ngOnInit() {
     this.userSub = this.authService.userInfo$.subscribe(userInfo => {
       this.userInfo = userInfo;
       this.taskForm.get('creator').setValue(this.userInfo.id);
     });
+
+    this.filtersListItems = [
+      {
+        name: 'Tasks',
+        value: 'tasks',
+        items: [
+          {
+            name: 'All',
+            value: null,
+            selected: true
+          },
+          {
+            name: 'Mine',
+            value: 'mine'
+          },
+        ]
+      },
+      {
+        name: 'Priority',
+        value: 'priority',
+        items: [
+          {
+            name: 'All',
+            value: null,
+            selected: true
+          },
+          {
+            name: 'Low',
+            value: 1
+          },
+          {
+            name: 'Medium',
+            value: 2
+          },
+          {
+            name: 'High',
+            value: 3
+          },
+        ]
+      },
+      {
+        name: 'Status',
+        value: 'status',
+        items: [
+          {
+            name: 'All',
+            value: null,
+            selected: true
+          },
+          {
+            name: 'Completed',
+            value: true
+          },
+          {
+            name: 'Incomplete',
+            value: false
+          }
+        ]
+      }
+    ];
+
+    this.sortListItems = [
+      {
+        name: 'None',
+        value: null,
+        selected: true
+      },
+      {
+        name: 'Priority',
+        value: 'priority'
+      },
+      {
+        name: 'Due Date',
+        value: 'due date'
+      },
+    ]
 
     const response = await this.tasksService.getTasks();
 
@@ -71,14 +165,6 @@ export class TasksComponent implements OnInit, OnDestroy {
       
     }
 
-    this.groupOptionsSelect = [
-    { value: '', label: 'team 1', group: true },
-    { value: '1', label: 'Option 1' },
-    { value: '2', label: 'Option 2' },
-    { value: '', label: 'team 2', group: true },
-    { value: '3', label: 'Option 3' },
-    { value: '4', label: 'Option 4' },
-    ];
   }
 
   ngOnDestroy() {
@@ -194,6 +280,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.taskForm.reset();
     // this.taskForm.get('dueDate').setValue(null); //VARIABLE NOT BEING RESET
     this.taskModal.show();
+    this.sortByPopover.hide();
     this.taskAction = 'new';
     this.taskForm.removeControl('files');
     this.taskForm.addControl('files', this.fb.array([]));
@@ -201,6 +288,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   async openViewTaskModal(taskId: string) {
     if(!this.taskModal.isShown) this.taskModal.show();
+    this.sortByPopover.hide();
     this.taskAction = 'view';
     this.selectedTask = null;
 
@@ -235,6 +323,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
     const req = {...this.taskForm.value}; //CLONE
     req.files = (<any[]>JSON.parse(JSON.stringify(req.files))).filter(file => file.name).map(file => ({name: file.name, url: file.url, path: file.path})); //DEEP CLONE
+    req.priority = +req.priority;
     req.dueDate = (<Date>req.dueDate).getTime();
 
     this.taskForm.disable();
@@ -285,6 +374,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
     const req = {...this.taskForm.value}; //CLONE
     req.files = (<any[]>JSON.parse(JSON.stringify(req.files))).filter(file => file.name).map(file => ({name: file.name, url: file.url, path: file.path})); //DEEP CLONE
+    req.priority = +req.priority;
     req.dueDate = (<Date>req.dueDate).getTime();
 
     this.taskForm.disable();
@@ -333,7 +423,6 @@ export class TasksComponent implements OnInit, OnDestroy {
 
 
   async deleteTask() {
-
     this.deleting = true;
 
     try {
@@ -360,6 +449,31 @@ export class TasksComponent implements OnInit, OnDestroy {
     
 
   }
+
+
+
+    
+
+  async selectFilterItem(filterValue: string, item: {name: string; value: string; selected: boolean}) {
+    item.selected = true;
+
+    const filter = this.filtersListItems.find(_filter => _filter.value === filterValue);
+
+    filter.items.forEach(_item => {
+      if(_item !== item) _item.selected = false;
+    });
+  }
+
+  async selectSortItem(item: {name: string; value: string; selected: boolean}) {
+    item.selected = true;
+
+    this.sortListItems.forEach(_item => {
+      if(_item !== item) _item.selected = false;
+    });
+    this.sortByPopover.hide();
+  }
+
+
 
   
 
