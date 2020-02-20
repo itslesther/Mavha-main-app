@@ -4,25 +4,31 @@
       <h1 class="font-weight-bold">TODO LIST</h1>
     </div>
 
-    <div *ngIf="!tasks" class="col-12 text-center pt-5">
-      <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
-    </div>
-
-    <div *ngIf="tasks" class="col-8 pt-3">
+    <div class="col-8 pt-3">
       <div class="row pb-4">
         <div class="col-auto mr-auto">
-          <button mdbBtn color="secondary" rounded="true" mdbWavesEffect (click)="openNewTaskModal()">
+          <button mdbBtn color="secondary" [disabled]="!tasks" rounded="true" mdbWavesEffect (click)="openNewTaskModal()">
             <mdb-icon fas icon="plus-circle mr-1"></mdb-icon>Add Task
           </button>
         </div>
 
         <div class="col-auto ml-auto">
-          <button mdbBtn color="secondary" size="sm" outline="true" rounded="true" mdbWavesEffect (click)="filterCollapse.toggle()">
-            <mdb-icon fas icon="filter"></mdb-icon> Filters
-          </button>
           <button 
             mdbBtn 
             color="secondary" 
+            [disabled]="!tasks" 
+            size="sm" 
+            outline="true" 
+            rounded="true" 
+            mdbWavesEffect 
+            (click)="filterCollapse.toggle()">
+            <mdb-icon fas icon="filter"></mdb-icon> Filters
+          </button>
+
+          <button 
+            mdbBtn 
+            color="secondary" 
+            [disabled]="!tasks"
             size="sm" 
             rounded="true" 
             #sortByPopover="bs-mdbPopover" 
@@ -73,14 +79,22 @@
               <span class="font-weight-bold">Title</span>
             </div>
             <div class="col-2 text-center">
-              <span class="font-weight-bold">Priority<mdb-icon fas icon="arrow-down ml-1"></mdb-icon></span>
+              <span class="font-weight-bold{{filter.sortBy === 'priority'? ' purple-text is-clickable' : ''}}" (click)="toggleSortDirection('priority')">
+                Priority<mdb-icon *ngIf="filter.sortBy === 'priority'" fas icon="arrow-{{filter.direction === 'desc'? 'down' : 'up'}} ml-1"></mdb-icon>
+              </span>
             </div>
             <div class="col-2">
-              <span class="font-weight-bold">Due Date<mdb-icon fas icon="arrow-down ml-1"></mdb-icon></span>
+              <span class="font-weight-bold{{filter.sortBy === 'dueDate'? ' purple-text is-clickable' : ''}}" (click)="toggleSortDirection('dueDate')">
+                Due Date<mdb-icon *ngIf="filter.sortBy === 'dueDate'" fas icon="arrow-{{filter.direction === 'desc'? 'down' : 'up'}} ml-1"></mdb-icon>
+              </span>
             </div>
           </div>
 
-          <ng-container *ngIf="!tasks.length">
+          <div *ngIf="!tasks" class="text-center">
+            <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
+          </div>
+
+          <ng-container *ngIf="tasks && !tasks.length">
             <h1 class="text-center pt-5">
               No Tasks found
             </h1>
@@ -89,7 +103,7 @@
           <ng-container *ngFor="let task of tasks">
             <div class="row is-clickable py-3 taskHovered" (click)="openViewTaskModal(task.id)">
               <div class="col-1">
-                <mdb-checkbox [rounded]="true" [checked]="task.completed" (click)="$event.stopPropagation()"></mdb-checkbox>
+                <mdb-checkbox [rounded]="true" [checked]="task.completed" (change)="updateTaskStatus(task.id, $event.checked)" (click)="$event.stopPropagation()"></mdb-checkbox>
               </div>
               <div class="col-7 text-truncate">
                 {{task.title}}
@@ -98,9 +112,12 @@
                 <mdb-badge *ngIf="task.priority === 1" pill="true" default="true">Low</mdb-badge>
                 <mdb-badge *ngIf="task.priority === 2" pill="true" warning="true">Medium</mdb-badge>
                 <mdb-badge *ngIf="task.priority === 3" pill="true" danger="true">High</mdb-badge>
+                <!-- <mdb-badge *ngIf="!task.priority" pill="true">No Priority</mdb-badge> -->
+                <span *ngIf="!task.priority">No Priority</span>
               </div>
               <div class="col-2">
-                <small>{{formatDate(task.dueDate)}}</small>
+                <small *ngIf="task.dueDate">{{formatDate(task.dueDate)}}</small>
+                <small *ngIf="!task.dueDate">No Date</small>
               </div>
             </div>
             <hr class="my-0">
@@ -114,7 +131,7 @@
 <div class="py-5"></div>
 
 <div mdbModal #taskModal="mdbModal" class="modal fade top" id="frameModalTop" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-  aria-hidden="true">
+  aria-hidden="true" (close)="closedTaskModal()">
   <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
     <!--modal-notify modal-info-->
     <div class="modal-content">
@@ -123,21 +140,23 @@
           <div class="col mr-auto white-text">
             <p *ngIf="taskAction === 'new'" class="heading lead">Add Task</p>
             <p *ngIf="taskAction === 'edit'" class="heading lead">Edit Task</p>
-            <p *ngIf="taskAction === 'view'" class="heading lead is-clickable border d-inline p-1 rounded">
-              <mdb-icon fas icon="check"></mdb-icon> Mark Complete
+            <p *ngIf="taskAction === 'view' && selectedTask" class="heading lead is-clickable border d-inline p-1 rounded" [class.purple]="selectedTask.completed" (click)="updateTaskStatus(selectedTask.id, !selectedTask.completed)">
+              <mdb-icon fas icon="check"></mdb-icon> 
+              <ng-container *ngIf="!selectedTask.completed"> Mark Complete</ng-container>
+              <ng-container *ngIf="selectedTask.completed"> Completed</ng-container>
             </p>
           </div>
 
           <div class="col-3 ml-auto text-right white-text">
             <mdb-icon *ngIf="taskAction !== 'new'" fas icon="ellipsis-h" class="mx-2 is-clickable" #taskMenuPopover="bs-mdbPopover" placement="bottom" triggers="focus" [mdbPopover]="popTemplate"></mdb-icon>
-            <mdb-icon fas icon="times" class="mx-2 is-clickable" (click)="closeTaskModal()"></mdb-icon>
+            <mdb-icon fas icon="times" class="mx-2 is-clickable" (click)="taskModal.hide()"></mdb-icon>
           </div>
           <!--It doesn't matter where ng-template blocks goes in the script-->
           <ng-template #popTemplate>
             <div class="list-group list-group-flush">
-              <button *ngIf="taskAction === 'view'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect>
+              <!-- <button *ngIf="taskAction === 'view' && selectedTask" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect (click)="updateTaskStatus(selectedTask.id, !selectedTask.completed)">
                 <mdb-icon fas icon="check"></mdb-icon> Mark Complete
-              </button>
+              </button> -->
               <button *ngIf="taskAction === 'view'" class="list-group-item list-group-item-action waves-light px-0" mdbWavesEffect (click)="editTaskModal()">
                 <mdb-icon far icon="edit"></mdb-icon> Edit Task
               </button>
@@ -158,7 +177,7 @@
           <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
         </div>
 
-        <form *ngIf="taskAction !== 'view' && !deleting" [formGroup]="taskForm" class="row justify-content-center">
+        <form *ngIf="taskAction !== 'view' && !deleting" [formGroup]="taskForm" class="row justify-content-center pb-5">
 
           <div class="col-12 text-center">
             <h4 class="font-weight-bold">Title</h4>
@@ -216,8 +235,15 @@
           <div class="col-12 text-center">
             <h4 class="font-weight-bold">Description</h4>
           </div>
-          <div class="col-10 mt-0 pb-5">
-            <textarea type="text" id="form7" class="md-textarea form-control" rows="5" mdbInput formControlName="description"></textarea>
+          <div class="col-10 mt-0 pb-3">
+            <div *ngIf="loadingTinymce" class="text-center">
+              <mdb-spinner spinnerColor="blue"></mdb-spinner>
+            </div>
+
+            <div [hidden]="loadingTinymce" id="tinymceEditor" [innerHTML]='description | safeHtml'>
+
+            </div>
+            <!-- <textarea type="text" id="form7" class="md-textarea form-control" rows="5" mdbInput formControlName="description"></textarea> -->
           </div>
 
 
@@ -305,7 +331,7 @@
 
       
       <div *ngIf="!deleting" class="modal-footer justify-content-center">
-        <button *ngIf="taskAction !== 'view'" type="button" mdbBtn color="secondary" outline="true" mdbWavesEffect (click)="closeTaskModal()">Close</button>
+        <button *ngIf="taskAction !== 'view'" type="button" mdbBtn color="secondary" outline="true" mdbWavesEffect (click)="taskModal.hide()">Close</button>
 
         <button *ngIf="taskAction === 'new'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="newTask()" [disabled]="submitting" >
           <span *ngIf="!submitting">Submit</span>

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { SharedService } from 'src/app/shared/shared.service';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams  } from '@angular/common/http';
 import { APIResponse, Task } from '../shared/interfaces';
 
 
@@ -25,8 +25,12 @@ export class TasksService {
     return this.http.post<APIResponse>(`${this.APIURL}/tasks`, req, this.httpOptions).toPromise();
   }
 
-  getTasks() {
-    return this.http.get<APIResponse>(`${this.APIURL}/tasks`).toPromise();
+  getTasks(filter: any) {
+    const _filter = {...filter};
+    Object.keys(_filter).forEach((key) => (_filter[key] == null) && delete _filter[key]);
+
+    const params = new HttpParams({fromObject: _filter});
+    return this.http.get<APIResponse>(`${this.APIURL}/tasks`, {params}).toPromise();
   }
   
   getTask(taskId: string) {
@@ -56,6 +60,10 @@ export class TasksService {
 
   deleteDocument(req: {path: string}) {
     return this.http.post<APIResponse>(`${this.APIURL}/tasks/deleteDocument`, req, this.httpOptions).toPromise();
+  }
+
+  updateTaskStatus(taskId: string, completed: boolean) {
+    return this.http.post<APIResponse>(`${this.APIURL}/tasks/${taskId}/updateTaskStatus`, {completed}, this.httpOptions).toPromise();
   }
 
 
