@@ -122,6 +122,14 @@
             </div>
             <hr class="my-0">
           </ng-container>
+
+          <div *ngIf="canLoadMoreTasks" class="text-center pt-2">
+            <button mdbBtn color="secondary" [disabled]="loadingMoreTasks" rounded="true" mdbWavesEffect (click)="loadMoreTasks()">
+              <span *ngIf="!loadingMoreTasks">Load more Tasks</span>
+              <span *ngIf="loadingMoreTasks" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </button>
+          </div>
+
         </mdb-card-body>
       </mdb-card>
     </div>
@@ -177,7 +185,7 @@
           <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
         </div>
 
-        <form *ngIf="taskAction !== 'view' && !deleting" [formGroup]="taskForm" class="row justify-content-center pb-5">
+        <form *ngIf="taskAction !== 'view' && !deleting && taskModal.isShown" [formGroup]="taskForm" class="row justify-content-center pb-5">
 
           <div class="col-12 text-center">
             <h4 class="font-weight-bold">Title</h4>
@@ -280,12 +288,12 @@
 
         </form>
 
-        <div *ngIf="taskAction === 'view'" class="row justify-content-center">
+        <div *ngIf="taskAction === 'view' && !deleting" class="row justify-content-center">
           <div *ngIf="!selectedTask" class="col-12 text-center pt-5">
             <mdb-spinner spinnerType="big" spinnerColor="blue"></mdb-spinner>
           </div>
 
-          <ng-container *ngIf="selectedTask && !deleting">
+          <ng-container *ngIf="selectedTask">
             <div class="col-12">
               <h1 class="font-weight-bold">{{selectedTask.title}}</h1>
             </div>
@@ -294,7 +302,7 @@
               <p class="grey-text font-weight-bold">Due Date:</p>
             </div>
             <div class="col-10">
-              <p class="font-weight-bold">{{formatDate(selectedTask.dueDate)}}</p>
+              <p *ngIf="selectedTask.dueDate" class="font-weight-bold">{{formatDate(selectedTask.dueDate)}}</p>
             </div>
   
             <div class="col-2">
@@ -323,7 +331,6 @@
               <a *ngFor="let file of selectedTask.files" [href]="file.url" class="mr-3" target="_blank">{{file.name}}</a>
             </div>
           </ng-container>
-
         </div>
 
       </div>

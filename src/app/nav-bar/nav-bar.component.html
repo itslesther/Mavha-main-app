@@ -5,6 +5,13 @@
   </mdb-navbar-brand>
 
   <links>
+    <ul class="navbar-nav mr-auto nav-flex-icons">
+      <li class="nav-item" routerLinkActive="active">
+        <a class="nav-link waves-light" [routerLink]="['/tasks']" mdbWavesEffect>
+          <mdb-icon fas icon="clipboard-list"></mdb-icon>Tasks
+        </a>
+      </li>
+    </ul>
     <ul class="navbar-nav ml-auto nav-flex-icons">
       <ng-container *ngIf="!userInfo">
         <li class="nav-item" routerLinkActive="active">
@@ -41,26 +48,5 @@
       </ng-container>
     </ul>
   </links>
-
-  <!-- <links [hidden]="!userInfo">
-    <ul class="navbar-nav ml-auto nav-flex-icons">
-      <li class="nav-item">
-        <a class="nav-link">
-          <div class="btn-group" mdbDropdown>
-            <a *ngIf="selectedWallet$ | async as selectedWallet" mdbDropdownToggle>
-              <mdb-icon fas icon="user"></mdb-icon>Lesther Caballero
-            </a>
-            <div class="dropdown-menu dropdown-menu-right dropdown-primary">
-
-              <div class="divider dropdown-divider"></div>
-              <a class="dropdown-item" (click)="logout()">
-                <mdb-icon fas icon="sign-out-alt"></mdb-icon>Logout
-              </a>
-            </div>
-          </div>
-        </a>
-      </li>
-    </ul>
-  </links> -->
 
 </mdb-navbar>

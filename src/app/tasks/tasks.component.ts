@@ -7,6 +7,7 @@ import { SharedService } from '../shared/shared.service';
 import errorCodes from '../shared/errorCodes';
 import { AuthService } from '../auth/auth.service';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 declare const tinymce: any;
 
@@ -26,6 +27,9 @@ export class TasksComponent implements OnInit, OnDestroy {
   
   public tasks: Task[];
   public selectedTask: Task;
+
+  public loadingMoreTasks: boolean;
+  public canLoadMoreTasks: boolean;
 
   public submitting: boolean;
   public deleting: boolean;
@@ -93,7 +97,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
 
   async ngOnInit() {
-    this.userSub = this.authService.userInfo$.subscribe(userInfo => {
+    this.userSub = this.authService.userInfo$.pipe(filter(userInfo => !!userInfo)).subscribe(userInfo => {
       this.userInfo = userInfo;
       this.taskForm.get('creator').setValue(this.userInfo.id);
     });
@@ -185,20 +189,45 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   private async getTasks() {
     this.tasks = null;
-    
+    this.filter.startAfter = null;
+
     const response = await this.tasksService.getTasks(this.filter);
 
     if (response.success) {
       this.tasks = response.data;
+      this.canLoadMoreTasks = this.tasks.length === this.filter.limit;
+
     } else {
+      console.error(response.error.code);
       this.toast.error(errorCodes[response.error.code], '', this.toastOptions);
     }
   }
 
+  public async loadMoreTasks() {
+    if(this.loadingMoreTasks) return;
 
-  public invalidField(field: AbstractControl) {
-    return this.sharedService.invalidField(field);
+    this.loadingMoreTasks = true;
+
+    this.filter.startAfter = this.tasks[this.tasks.length - 1].id;
+
+    const response = await this.tasksService.getTasks(this.filter);
+
+    if (response.success) {
+      const moreTaks: Task[] = response.data;  
+      this.tasks.push(...moreTaks);
+
+      this.canLoadMoreTasks = moreTaks.length === this.filter.limit;
+
+    } else {
+      console.error(response.error.code);
+      this.toast.error(errorCodes[response.error.code], '', this.toastOptions);
+    }
+
+    this.loadingMoreTasks = false;
   }
+
+
+
 
   get files() {
     return this.taskForm.get('files') as FormArray;
@@ -313,7 +342,7 @@ export class TasksComponent implements OnInit, OnDestroy {
       if(this.isTinymceEditorActive) return;
       this.loadingTinymce = true;
       await this.sharedService.loadScript('tinymce');
-      console.log('initializeTinymce')
+
       tinymce.init({
         selector: '#tinymceEditor',
         inline: false,
@@ -348,22 +377,20 @@ export class TasksComponent implements OnInit, OnDestroy {
     if(this.taskMenuPopover) this.taskMenuPopover.hide();
     this.destroyTinymce();
     this.description = '';
-    // this.taskForm.get('description').setValue(null);
   }
 
 
   openNewTaskModal() {
-    // this.closedTaskModal();
     this.taskAction = 'new';
-    this.taskForm.reset();
+
+    this.resetTaskForm();
+
     if(this.userInfo) this.taskForm.get('creator').setValue(this.userInfo.id);
-    // this.taskForm.get('dueDate').setValue(null); //VARIABLE NOT BEING RESET
     this.taskModal.show();
     this.sortByPopover.hide();
-    this.taskForm.removeControl('files');
-    this.taskForm.addControl('files', this.fb.array([]));
     this.initializeTinymce();
   }
+
 
   async openViewTaskModal(taskId: string) {
     this.taskAction = 'view';
@@ -380,21 +407,32 @@ export class TasksComponent implements OnInit, OnDestroy {
       this.selectedTask = response.data;
       
     } else {
+      console.error(response.error.code);
       this.toast.error(errorCodes[response.error.code], '', this.toastOptions);
     }
   }
 
+
   editTaskModal() {
     this.taskAction = 'edit';
-    this.taskForm.reset();
-    this.taskForm.removeControl('files');
-    this.taskForm.addControl('files', this.fb.array([]));
+    
+    this.resetTaskForm();
+
     this.selectedTask.files.forEach(file => this.addNewFile());
     this.taskForm.patchValue(this.selectedTask);
-    this.taskForm.get('dueDate').setValue(new Date(this.selectedTask.dueDate));
+
+    if(this.selectedTask.dueDate) this.taskForm.get('dueDate').setValue(new Date(this.selectedTask.dueDate));
     this.description = this.taskForm.get('description').value;
     this.initializeTinymce();
   }
+
+
+  private resetTaskForm() {
+    this.taskForm.reset();
+    this.taskForm.removeControl('files');
+    this.taskForm.addControl('files', this.fb.array([]));
+  }
+
 
   formatDate(unFormatedDate: number) {
     const formatedDate = this.sharedService.formatDate(unFormatedDate);
@@ -404,6 +442,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   async newTask() {
     // if(!this.taskForm.valid) return this.taskForm.markAllAsTouched();
+
     const req = {...this.taskForm.value}; //CLONE
     req.files = (<any[]>JSON.parse(JSON.stringify(req.files))).filter(file => file.name).map(file => ({name: file.name, url: file.url, path: file.path})); //DEEP CLONE
     req.priority = +req.priority || null;
@@ -431,7 +470,6 @@ export class TasksComponent implements OnInit, OnDestroy {
           files: req.files
         };
         this.tasks.unshift(task);
-        console.log(task);
 
         this.taskAction = 'view';
         this.selectedTask = task;
@@ -482,7 +520,6 @@ export class TasksComponent implements OnInit, OnDestroy {
       if (response.success) {
 
         this.toast.success('Task Updated','', this.toastOptions);
-        // this.taskModal.hide();
         this.taskAction = 'view';
         this.selectedTask = task;
         this.destroyTinymce();
@@ -529,12 +566,11 @@ export class TasksComponent implements OnInit, OnDestroy {
     }
 
     this.deleting = false;
-
   }
+
 
   async updateTaskStatus(taskId: string, completed: boolean) {
     try {
-
       const taskFound = this.tasks.find(_task => _task.id === taskId);
       const response = await this.tasksService.updateTaskStatus(taskId, completed);
       
@@ -556,11 +592,17 @@ export class TasksComponent implements OnInit, OnDestroy {
     }
   }
 
-
-
     
 
   async selectFilterItem(filterValue: string, item: {name: string; value: string; selected: boolean}) {
+    if(filterValue === 'tasks') {
+      if(item.value === 'mine' && !this.userInfo) return this.toast.info('', 'Log in to view your tasks', this.toastOptions);
+      this.filter.creator = item.value === 'mine'? this.userInfo.id : null;
+      
+    } else {
+      this.filter[filterValue] = item.value;
+    }
+
     item.selected = true;
 
     const filter = this.filtersListItems.find(_filter => _filter.value === filterValue);
@@ -569,20 +611,14 @@ export class TasksComponent implements OnInit, OnDestroy {
       if(_item !== item) _item.selected = false;
     });
 
-    if(filterValue === 'tasks') {
-      if(item.value === 'mine' && !this.userInfo) return this.toast.info('', 'Logging to view your tasks', this.toastOptions);
-      this.filter.creator = item.value === 'mine'? this.userInfo.id : null;
-    
-    } else {
-      this.filter[filterValue] = item.value;
-    }
-
-
     await this.getTasks();
   }
 
 
   async selectSortItem(item: {name: string; value: string; selected: boolean}) {
+    this.filter.sortBy = item.value;
+    this.filter.direction = 'desc'; //DEFAULT
+    
     item.selected = true;
 
     this.sortListItems.forEach(_item => {
@@ -590,11 +626,9 @@ export class TasksComponent implements OnInit, OnDestroy {
     });
     this.sortByPopover.hide();
 
-    this.filter.sortBy = item.value;
-    this.filter.direction = 'desc'; //DEFAULT
-
     await this.getTasks();
   }
+
 
   async toggleSortDirection(sortBy: string) {
     if(this.filter.sortBy !== sortBy) return;
