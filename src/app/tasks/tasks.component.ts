@@ -420,9 +420,8 @@ export class TasksComponent implements OnInit, OnDestroy {
 
     this.selectedTask.files.forEach(file => this.addNewFile());
     this.taskForm.patchValue(this.selectedTask);
-
     if(this.selectedTask.dueDate) this.taskForm.get('dueDate').setValue(new Date(this.selectedTask.dueDate));
-    if(this.selectedTask.priority) this.taskForm.get('priority').setValue(this.selectedTask.priority.toString());
+    // if(this.selectedTask.priority) this.taskForm.get('priority').setValue(this.selectedTask.priority.toString());
     this.description = this.taskForm.get('description').value;
     this.initializeTinymce();
   }
@@ -524,9 +523,8 @@ export class TasksComponent implements OnInit, OnDestroy {
         this.taskAction = 'view';
         this.selectedTask = task;
         this.destroyTinymce();
-
         
-        const taskIndex = this.tasks.findIndex(_task => _task.id = task.id);
+        const taskIndex = this.tasks.findIndex(_task => _task.id === task.id);
         this.tasks[taskIndex] = task;
         
       } else {

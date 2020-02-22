@@ -211,7 +211,7 @@
             <div class="form-check form-check-inline">
               <input type="radio" class="form-check-input" id="materialInline1" name="inlineMaterialRadiosExample" mdbInput
                name="priority"
-               value="1"
+               [value]="1"
                formControlName="priority">
               <label class="form-check-label" for="materialInline1">
                 <mdb-badge pill="true" default="true">Low</mdb-badge>
@@ -221,7 +221,7 @@
             <div class="form-check form-check-inline">
               <input type="radio" class="form-check-input" id="materialInline2" name="inlineMaterialRadiosExample" mdbInput 
               name="priority"
-              value="2"
+              [value]="2"
               formControlName="priority">
               <label class="form-check-label" for="materialInline2">
                 <mdb-badge pill="true" warning="true">Medium</mdb-badge>
@@ -340,12 +340,12 @@
       <div *ngIf="!deleting" class="modal-footer justify-content-center">
         <button *ngIf="taskAction !== 'view'" type="button" mdbBtn color="secondary" outline="true" mdbWavesEffect (click)="taskModal.hide()">Close</button>
 
-        <button *ngIf="taskAction === 'new'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="newTask()" [disabled]="submitting" >
+        <button *ngIf="taskAction === 'new'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="newTask()" [disabled]="submitting || uploadingFiles">
           <span *ngIf="!submitting">Submit</span>
           <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         </button>
 
-        <button *ngIf="taskAction === 'edit'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="updateTask()" [disabled]="submitting" >
+        <button *ngIf="taskAction === 'edit'" type="button" mdbBtn color="secondary" class="waves-light" mdbWavesEffect (click)="updateTask()" [disabled]="submitting || uploadingFiles">
           <span *ngIf="!submitting">Update</span>
           <span *ngIf="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         </button>
