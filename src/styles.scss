@@ -12,3 +12,7 @@ mdb-error {
 .is-clickable {
   cursor: pointer;
 }
+
+.tox:not([dir=rtl]) .tox-statusbar__branding {
+  display: none;
+}

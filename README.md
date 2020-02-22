@@ -1,27 +1,45 @@
-# MainApp
+# To-Do List App (Frontend) for MAvha test
+
+**Note:** [Click here to see the app hosted and running](https://mavha-test.web.app/)
+
+Frontend made in Angular in order to implement a To-Do list app
+
+[Click here to go to Nodejs Backend repository](https://github.com/itslesther/Mavha-main-api)
+
+## Functionalities
+
+ - **Add Task: Add a task to the to-do list**
+	Fields: title, due date priority, description, attachments
+	
+ - **Edit Task: Edit an already created task**
+ 
+ - **Delete Task: Delete an already created tasks**
+  
+ - **List Tasks: Lists all the tasks in the app. it also has the following functionalities:**
+
+   Filter by: 
+	 1. *Tasks*: All tasks in the app. My tasks (when logged in).
+	 2. *Priority*: All priorities, low, medium, high.
+	 3.  *Status*: All, Completed, imcomplete.
+
+   Sort by (Ascendant/Descendant):
+   1. *None*
+	2. *Priority*
+	3. *Due Date*
+
+   Infinite load pagination: Load of more tasks when total tasks exceeds 10 elements.
+   
+- **Account Creation and Login: Account creation in order to filter the tasks by the ones created by the user** 
+
+## Environment
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.0.2.
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `npm install` in order to install required dependencies.
 
-## Code scaffolding
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The backend must be running so the app can work.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
-
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+## Author
+Lesther Caballero
