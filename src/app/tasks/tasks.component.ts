@@ -422,6 +422,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.taskForm.patchValue(this.selectedTask);
 
     if(this.selectedTask.dueDate) this.taskForm.get('dueDate').setValue(new Date(this.selectedTask.dueDate));
+    if(this.selectedTask.priority) this.taskForm.get('priority').setValue(this.selectedTask.priority.toString());
     this.description = this.taskForm.get('description').value;
     this.initializeTinymce();
   }
